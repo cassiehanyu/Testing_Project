@@ -1,0 +1,11 @@
+digraph "Call Graph" {
+	label="Call Graph";
+
+	Node0x32f1900 [shape=record,label="{external node}"];
+	Node0x32f1900 -> Node0x32f23f0;
+	Node0x32f1900 -> Node0x32f0390;
+	Node0x32f23f0 [shape=record,label="{main}"];
+	Node0x32f23f0 -> Node0x32f0390;
+	Node0x32f0390 [shape=record,label="{printf}"];
+	Node0x32f0390 -> Node0x32f7b20;
+}
