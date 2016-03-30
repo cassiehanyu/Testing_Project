@@ -72,13 +72,23 @@ public class TestingProject {
 
     }
     public static void main(String argv[]){
-        /*bitCodeFile = argv[0];
+        bitCodeFile = argv[0];
         if(argv.length == 3){
             T_SUPPORT = Integer.parseInt(argv[1]);
             T_CONFIDENCE = Integer.parseInt(argv[2]);
-        }*/
+        }
 
         // Run opt-call file with specified bit code file name and create a callgraph.txt file
+        String command = "opt-call.sh " + bitCodeFile;
+        try {
+            Process process = Runtime.getRuntime().exec(command);
+            process.waitFor();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
 
         // Parse out callgraph.txt
         File call_graph = new File(CALLGRAPHFILE);
@@ -130,18 +140,12 @@ public class TestingProject {
                     List<String> tmp_list = (List<String>) count_pair.getValue();
                     int cur_count = tmp_list.size();
                     int cur_confidence = (cur_count * 100) / cur_sup;
-                    if (cur_confidence > T_CONFIDENCE && cur_confidence != 100) {
+                    if (cur_confidence >= T_CONFIDENCE && cur_confidence != 100) {
                         // add to confidence level
                         String key_fun = cur_fn.functionName;
                         String val_fun = (String) count_pair.getKey();
                         SimpleEntry entry = new SimpleEntry(key_fun, val_fun);
-                        //if (high_conf_pair.contains(entry) ||
-                          //      high_conf_pair.contains(new SimpleEntry(val_fun, key_fun))) {
-                            // if key value in two different orders appear in the list, consider as duplicated, ignore
-                            //continue;
-                        //} else {
-                            high_conf_pair.add(entry);
-                        //}
+                        high_conf_pair.add(entry);
                     }
                 }
             }
@@ -160,10 +164,10 @@ public class TestingProject {
                 func_caller.removeAll(val_func_caller);
 
                 for (String aFunc_caller : func_caller) {
-                    int confidence = (val_func_caller.size() * 100) / cur_func_node.getSupport();
+                    float confidence = (val_func_caller.size() * 100.00f) / cur_func_node.getSupport();
                     System.out.println("bug: " + pair_key + " in " + aFunc_caller + ", pair: ("
                             + pair_key + ", " + pair_value + "), support: " + val_func_caller.size() + ", confidence: "
-                            + confidence + ".00%");
+                            + String.format("%.2f", confidence) + "%");
                 }
             }
         }
