@@ -1,0 +1,11 @@
+#!/bin/bash
+unset JAVA_TOOL_OPTIONS
+opt -print-callgraph $1 1>/dev/null 2>callgraph.txt
+make >/dev/null
+if [ $# -eq 3 ]
+  then
+    java -cp "../" -Xms128m -Xmx128m pipair $2 $3 2>/dev/null
+  else
+    java -cp "../" -Xms128m -Xmx128m pipair 2>/dev/null
+fi
+
