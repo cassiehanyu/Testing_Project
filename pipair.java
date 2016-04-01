@@ -9,8 +9,8 @@ import static java.util.AbstractMap.*;
  */
 public class TestingProject {
     public static String bitCodeFile;
-    public static Integer T_SUPPORT = 3;
-    public static Integer T_CONFIDENCE = 65;
+    public static Integer T_SUPPORT = 10;
+    public static Integer T_CONFIDENCE = 80;
     public static final String CALLGRAPHFILE = "callgraph.txt";
 
     public static Map<String, functionNode> map = new HashMap<>();
@@ -18,25 +18,29 @@ public class TestingProject {
 
     public static class functionNode{
         String functionName;
-        int uses;                                           // uses - 1 = #support
-        Map<String, List<String>> callMap = new HashMap<>();
-        List<String> callerList = new ArrayList<>();
+        int uses;                                           // uses is not useful in this case
+
+        Map<String, Set<String>> relationMap = new HashMap();
+        Set<String> callerList = new TreeSet<>();        // caller list should be unique
 
         public functionNode(String functionName){
             this.functionName = functionName;
         }
 
-        public void addPair(String function, String call_function){
-            callMap.computeIfAbsent(function, k -> new ArrayList<>());
-            callMap.get(function).add(call_function);
+        public void addPair(String function, String caller){
+            // ignore adding itself in as a pair
+            if(!function.equals(functionName)) {
+                relationMap.computeIfAbsent(function, k -> new TreeSet());
+                relationMap.get(function).add(caller);
+            }
         }
 
         public void setUses(int uses){
             this.uses = uses;
         }
 
-        public Map<String, List<String>> getCallMap(){
-            return this.callMap;
+        public Map<String, Set<String>> getRelationMap(){
+            return this.relationMap;
         }
 
         public void addCaller(String caller_func){
@@ -47,12 +51,9 @@ public class TestingProject {
             return new ArrayList<>(this.callerList);
         }
 
-        public int getUses(){
-            return this.uses;
-        }
-
         public int getSupport(){
-            return this.uses - 1;
+            //return this.uses - 1;
+            return callerList.size();
         }
 
         @Override
@@ -72,7 +73,7 @@ public class TestingProject {
 
     }
     public static void main(String argv[]){
-        bitCodeFile = argv[0];
+        bitCodeFile = argv[02];
         if(argv.length == 3){
             T_SUPPORT = Integer.parseInt(argv[1]);
             T_CONFIDENCE = Integer.parseInt(argv[2]);
@@ -134,11 +135,11 @@ public class TestingProject {
             if (cur_sup < T_SUPPORT) {
                 continue;
             } else {
-                Map<String, List<String>> callMap = cur_fn.getCallMap();
-                for (Object o1 : callMap.entrySet()) {
+                Map<String, Set<String>> relationMap = cur_fn.getRelationMap();
+                for (Object o1 : relationMap.entrySet()) {
                     Entry count_pair = (Entry) o1;
-                    List<String> tmp_list = (List<String>) count_pair.getValue();
-                    int cur_count = tmp_list.size();
+                    Set<String> pair_count = (Set<String>) count_pair.getValue();
+                    int cur_count = pair_count.size();
                     int cur_confidence = (cur_count * 100) / cur_sup;
                     if (cur_confidence >= T_CONFIDENCE && cur_confidence != 100) {
                         // add to confidence level
@@ -157,16 +158,26 @@ public class TestingProject {
             String pair_value = (String)pair.getValue();
             functionNode cur_func_node = map.get(pair_key);
             List<String> func_caller = cur_func_node.getCallerList();
-            List<String> val_func_caller = cur_func_node.getCallMap().get(pair_value);
+            Set<String> val_func_caller = cur_func_node.getRelationMap().get(pair_value);
             if(val_func_caller == null){
                 System.out.println("Error could not find any correlation between A and B failed!");
             } else {
                 func_caller.removeAll(val_func_caller);
 
+                String first, second;
+                // output pair must be in alphabetical order
+                if(pair_key.compareTo(pair_value) > 0){
+                    first = pair_value;
+                    second = pair_key;
+                } else {
+                    first = pair_key;
+                    second = pair_value;
+                }
+
                 for (String aFunc_caller : func_caller) {
                     float confidence = (val_func_caller.size() * 100.00f) / cur_func_node.getSupport();
                     System.out.println("bug: " + pair_key + " in " + aFunc_caller + ", pair: ("
-                            + pair_key + ", " + pair_value + "), support: " + val_func_caller.size() + ", confidence: "
+                            + first + ", " + second + "), support: " + val_func_caller.size() + ", confidence: "
                             + String.format("%.2f", confidence) + "%");
                 }
             }
@@ -175,23 +186,28 @@ public class TestingProject {
     }
 
     public static void processNode(Scanner scanner, String caller_func){
-        Vector<String> cs_list = new Vector<>();
+        Set<String> tmp_set = new HashSet<>();
 
         while(scanner.hasNext()){
             String cur_line = scanner.nextLine();
             if(cur_line.matches("  CS.*")){
                 if(cur_line.split("'").length > 1) {
-                    cs_list.add(cur_line.split("'")[1]);
+                    tmp_set.add(cur_line.split("'")[1]);
                 }
             } else {
                 break;
             }
         }
 
+        // dedupe a vector in java
+        List<String> cs_list = new ArrayList<>(tmp_set);
+
         // fill functionNode
         for(int i = 0; i < cs_list.size(); i++){
             String cur_fn = cs_list.get(i);
             functionNode fn;
+
+            // retrieving the function node from the map by its name, if does not exist, create one
             if(map.containsKey(cur_fn)){
                 fn = map.get(cur_fn);
             } else {
@@ -199,7 +215,7 @@ public class TestingProject {
                 map.put(cur_fn, fn);
             }
 
-            // CHECK ERROR
+            // for every function node in the call, add its caller
             fn.addCaller(caller_func);
 
             for(int j = 0; j < cs_list.size(); j++){
