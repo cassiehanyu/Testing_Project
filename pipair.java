@@ -7,7 +7,7 @@ import static java.util.AbstractMap.*;
 /**
  * Created by frankgu on 2016-03-29.
  */
-public class TestingProject {
+public class pipair {
     public static String bitCodeFile;
     public static Integer T_SUPPORT = 10;
     public static Integer T_CONFIDENCE = 80;
@@ -30,7 +30,10 @@ public class TestingProject {
         public void addPair(String function, String caller){
             // ignore adding itself in as a pair
             if(!function.equals(functionName)) {
-                relationMap.computeIfAbsent(function, k -> new TreeSet());
+                //relationMap.computeIfAbsent(function, k -> new TreeSet());
+                if(relationMap.get(function) == null){
+                    relationMap.put(function, new TreeSet());
+                }
                 relationMap.get(function).add(caller);
             }
         }
@@ -73,7 +76,7 @@ public class TestingProject {
 
     }
     public static void main(String argv[]){
-        bitCodeFile = argv[02];
+        bitCodeFile = argv[0];
         if(argv.length == 3){
             T_SUPPORT = Integer.parseInt(argv[1]);
             T_CONFIDENCE = Integer.parseInt(argv[2]);
