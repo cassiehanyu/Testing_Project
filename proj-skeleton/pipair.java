@@ -8,7 +8,6 @@ import static java.util.AbstractMap.*;
  * Created by frankgu on 2016-03-29.
  */
 public class pipair {
-    public static String bitCodeFile;
     public static Integer T_SUPPORT = 3;
     public static Integer T_CONFIDENCE = 65;
     public static final String CALLGRAPHFILE = "callgraph.txt";
@@ -18,7 +17,6 @@ public class pipair {
 
     public static class functionNode{
         String functionName;
-        int uses;                                           // uses is not useful in this case
 
         Map<String, Set<String>> relationMap = new HashMap();
         Set<String> callerList = new TreeSet<>();        // caller list should be unique
@@ -41,10 +39,6 @@ public class pipair {
 
         public void setFunctionList(List functionList){
             this.functionList = functionList;
-        }
-
-        public void setUses(int uses){
-            this.uses = uses;
         }
 
         public Map<String, Set<String>> getRelationMap(){
@@ -72,11 +66,6 @@ public class pipair {
         @Override
         public int hashCode(){
              return functionName.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object o){
-            return this.functionName.equals(o);
         }
 
     }
